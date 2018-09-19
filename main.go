@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
@@ -38,7 +39,13 @@ type Color struct {
 	ProductID uint   `json:"-"`
 }
 
+type version struct {
+	Version string `json:"version"`
+}
+
 type ShoeServer interface {
+	status(resp http.ResponseWriter, r *http.Request)
+	version(resp http.ResponseWriter, r *http.Request)
 	add(resp http.ResponseWriter, r *http.Request)
 	get(resp http.ResponseWriter, r *http.Request)
 	delete(resp http.ResponseWriter, r *http.Request)
@@ -61,6 +68,42 @@ func handlerWrapper(h http.HandlerFunc) http.HandlerFunc {
 
 func (m MyHandler) ServeHTTP(resp http.ResponseWriter, r *http.Request) {
 	log.Printf("URI: %s", r.RequestURI)
+}
+
+func (m *MyHandler) status(resp http.ResponseWriter, r *http.Request) {
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusOK)
+}
+
+func (m *MyHandler) version(resp http.ResponseWriter, r *http.Request) {
+	file, err := os.Open("./VERSION")
+	if err != nil {
+		log.Println(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var v = ""
+
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+		v = scanner.Text()
+	}
+
+	versionJson, err := json.Marshal(version{Version: v})
+
+	if err != nil {
+		resp.Header().Set("Content-Type", "application/json")
+		resp.WriteHeader(http.StatusInternalServerError)
+
+		log.Println(err)
+		return
+	}
+
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusOK)
+	resp.Write(versionJson)
 }
 
 func (m *MyHandler) add(resp http.ResponseWriter, r *http.Request) {
@@ -161,6 +204,8 @@ func (m MyHandler) delete(resp http.ResponseWriter, r *http.Request) {
 
 func NewServer(ss ShoeServer) http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/status", handlerWrapper(ss.status))
+	mux.HandleFunc("/version", handlerWrapper(ss.version))
 	mux.HandleFunc("/add", handlerWrapper(ss.add))
 	mux.HandleFunc("/list", handlerWrapper(ss.get))
 	mux.HandleFunc("/delete", handlerWrapper(ss.delete))
