@@ -1,16 +1,16 @@
 VERSION := $(shell cat ./VERSION)
 
 linux:
-	GOOS=linux GOARCH=amd64 go build ...
+	GOOS=linux GOARCH=amd64 go build -o go_shoeshop_hw .
 
 windows:
-	GOOS=windows GOARCH=amd64 go build ...
+	GOOS=windows GOARCH=amd64 go build -o go_shoeshop_hw .
 
 raspberry:
-	GOOS=linux GOARCH=arm GOARM=6 go build ...
+	GOOS=linux GOARCH=arm GOARM=6 go build -o go_shoeshop_hw .
 
 osx:
-	GOOS=darwin GOARCH=amd64 go build ...
+	GOOS=darwin GOARCH=amd64 go build -o go_shoeshop_hw .
 
 install:
 	go install .
