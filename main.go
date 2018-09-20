@@ -221,7 +221,7 @@ func main() {
 	db, err = gorm.Open(os.Getenv("DB_TYPE"), os.Getenv("DB_CONNECT"))
 
 	if err != nil {
-		panic("failed to connect database")
+		panic(err)
 	}
 
 	defer func() {
